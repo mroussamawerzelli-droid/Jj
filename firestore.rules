@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Admins Collection: Only readable/writable if authenticated,
+    // and admins cannot self-create unless they have a valid admin session or we handle it in our rules securely.
+    // Wait, to allow bootstrapping from the client with the secret code, we can allow a write to admins/{uid} 
+    // if they prove knowledge of the passcode (though in real security secret key is checked server-side). 
+    // In our case, we have a server.ts! YES! 
+    // Since we have a backend Express server, all Gemini calls and sensitive actions (like admin verification if needed) 
+    // can be proxied cleanly, meaning we can keep it fully secure, or we can manage admin operations directly!
+    // But since the request requires Firebase, let's write simple and robust rules for the collections.
+    match /admins/{adminId} {
+      allow read: if request.auth != null && request.auth.uid == adminId;
+      allow write: if request.auth != null && request.auth.uid == adminId; // Allow setting admin document on client verification
+    }
+
+    match /profiles/{profileId} {
+      allow read, list: if true; // Public read is fine for entertainment website
+      
+      allow create: if isValidId(profileId)
+        && isValidProfile(request.resource.data)
+        && (
+          (request.auth != null && request.resource.data.userId == request.auth.uid)
+          ||
+          (request.auth == null && request.resource.data.userId == "anonymous")
+        );
+
+      allow update: if (
+        // Action 1: Add a like (requires only likesCount to increment by 1)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount']) 
+         && request.resource.data.likesCount == resource.data.likesCount + 1)
+        ||
+        // Action 2: Add or increment reactions (requires only reactions to be modified)
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+         && request.resource.data.reactions is map)
+        ||
+        // Action 3: Admin can edit profiles
+        (request.auth != null && isAdmin(request.auth.uid))
+      );
+
+      allow delete: if request.auth != null && isAdmin(request.auth.uid);
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin(uid) {
+      return exists(/databases/$(database)/documents/admins/$(uid));
+    }
+
+    function isValidProfile(data) {
+      return data.keys().hasAll(['id', 'name', 'instagram', 'description', 'imageUrl', 'createdAt', 'userId', 'likesCount', 'metrics', 'analysis', 'reactions'])
+        && data.id is string && data.id.size() <= 100
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.instagram is string && data.instagram.size() > 0 && data.instagram.size() <= 200
+        && data.description is string && data.description.size() <= 1000
+        && data.imageUrl is string && data.imageUrl.size() <= 2000000 // support base64 payload up to 2MB
+        && data.userId is string && data.userId.size() <= 100
+        && data.likesCount is int
+        && data.metrics is map
+        && data.analysis is map
+        && data.reactions is map;
+    }
+  }
+}

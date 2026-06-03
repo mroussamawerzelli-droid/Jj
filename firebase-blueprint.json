@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "Profile": {
+      "title": "Profile",
+      "description": "Represents a submitted friend profile and its AI-generated fun analysis.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the profile."
+        },
+        "name": {
+          "type": "string",
+          "description": "Friend's name."
+        },
+        "instagram": {
+          "type": "string",
+          "description": "Instagram link/handle."
+        },
+        "tiktok": {
+          "type": "string",
+          "description": "Optional TikTok link/handle."
+        },
+        "twitter": {
+          "type": "string",
+          "description": "Optional Twitter/X link/handle."
+        },
+        "description": {
+          "type": "string",
+          "description": "Short description of the friend."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Profile picture (url or base64 dataURI)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the profile was created."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the creator (can be anonymous or authenticated user)."
+        },
+        "likesCount": {
+          "type": "integer",
+          "description": "Number of likes the profile received."
+        },
+        "metrics": {
+          "type": "object",
+          "description": "Fun metrics generated for leaderboard rankings."
+        },
+        "analysis": {
+          "type": "object",
+          "description": "AI-generated fun personality analysis contents."
+        },
+        "reactions": {
+          "type": "object",
+          "description": "Interactive user reaction counts (haha, spotOn, fire)."
+        }
+      },
+      "required": ["id", "name", "instagram", "description", "imageUrl", "createdAt", "userId", "likesCount", "metrics", "analysis", "reactions"]
+    }
+  },
+  "firestore": {
+    "/profiles/{profileId}": {
+      "schema": "Profile",
+      "description": "Active collections of individual profile cards."
+    }
+  }
+}

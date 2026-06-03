@@ -1,0 +1,6 @@
+{
+  "name": "Chila.com",
+  "description": "A modern AI-powered profile deconstruction platform that turns friendly social media handles, photos, and playful descriptions into custom, funny, collectible digital personality cards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
